@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +24,7 @@ public class ProductServiceImpl implements ProductService{
     private Logger LOGGER = LoggerFactory.getLogger(ProductServiceImpl.class);
 
     @Override
-    public String createProduct(ProductDTO productDTO) {
+    public String createProduct(ProductDTO productDTO) throws ExecutionException, InterruptedException {
         String productId = UUID.randomUUID().toString();
         ProductCreatedEvent productCreatedEvent = ProductCreatedEvent.builder()
                 .productId(productId)
@@ -36,18 +37,15 @@ public class ProductServiceImpl implements ProductService{
 
         //Send kafka event:
 
-        CompletableFuture<SendResult<String, ProductCreatedEvent>> event = kafkaTemplate.send(topicName, productId, productCreatedEvent);
-        event.whenComplete((result, exception) -> {
-            if (exception != null) {
-                LOGGER.error("****** Error while sending the event: " + exception.getMessage());
-            } else {
-                LOGGER.info("****** Event sent successfully: " + result.getRecordMetadata());
-            }
-        });
-        //to send the kafka event sync you need to block this thread like this:
-        //event.join();
-        //but for now will be sending it in a non-blocking way:
-        LOGGER.info("****** Product id sent successfully.");
+        LOGGER.info("**** Before event: ");
+        SendResult<String, ProductCreatedEvent> result = kafkaTemplate
+                .send(topicName, productId, productCreatedEvent)
+                .get();
+
+        LOGGER.info("topic: " + result.getRecordMetadata().topic());
+        LOGGER.info("partition: " + result.getRecordMetadata().partition());
+
+        LOGGER.info("****** After event.");
         return productId;
     }
 }
