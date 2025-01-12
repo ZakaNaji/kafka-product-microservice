@@ -28,6 +28,10 @@ public class KafkaConfig {
     private int retries;
     @Value("${spring.kafka.producer.properties.retry.backoff.ms}")
     private String backoff;
+    @Value("${spring.kafka.producer.properties.enable.idempotence}")
+    private boolean enableIdempotence;
+    @Value("${spring.kafka.producer.properties.max.in.flight.requests.per.connection}")
+    private int maxInFlightRequestsPerConnection;
 
     @Bean
     public KafkaTemplate<String, ProductCreatedEvent> kafkaTemplate() {
@@ -45,7 +49,9 @@ public class KafkaConfig {
                 ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class.getName(),
                 ProducerConfig.ACKS_CONFIG, all,
                 ProducerConfig.RETRIES_CONFIG, retries,
-                ProducerConfig.RETRY_BACKOFF_MS_CONFIG, backoff
+                ProducerConfig.RETRY_BACKOFF_MS_CONFIG, backoff,
+                ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, enableIdempotence,
+                ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, maxInFlightRequestsPerConnection
         );
     }
 
